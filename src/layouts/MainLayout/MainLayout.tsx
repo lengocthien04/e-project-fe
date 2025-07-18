@@ -6,6 +6,8 @@ interface Props {
 
 export default function MainLayout({ children }: Props) {
   return (
-    <div className="flex h-screen overflow-auto w-[100vw] p-0">{children}</div>
+    <div className="flex h-screen overflow-auto w-[100vw] p-0 bg-background">
+      {children}
+    </div>
   );
 }

@@ -288,7 +288,7 @@ export function CurriculumManagement() {
                 className="flex flex-col md:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
               >
                 {/* Mobile: Top row with icon, name, and checkbox */}
-                <div className="flex items-start space-x-3 w-full sm:w-auto">
+                <div className="flex items-center space-x-3 w-full sm:w-auto">
                   {/* Desktop: Checkbox on left */}
                   <Checkbox
                     checked={selectedCurricula.includes(curriculum.id)}
@@ -306,7 +306,7 @@ export function CurriculumManagement() {
                   {/* Mobile: Name and badges */}
                   <div className="flex-1 min-w-0 sm:hidden">
                     <div className="mb-2">
-                      <p className="text-base font-medium text-gray-900 truncate">
+                      <p className="text-base font-medium text-gray-900 truncate text-left sm:text-center">
                         {curriculum.name}
                       </p>
                     </div>
@@ -347,7 +347,7 @@ export function CurriculumManagement() {
 
                   {/* Course details */}
                   <div className="flex flex-col space-y-2 md:space-y-1 mt-3 md:mt-0">
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-500 text-center sm:text-left">
                       {curriculum.code} • {curriculum.department} •{" "}
                       {curriculum.credits} credits
                     </p>
@@ -377,7 +377,7 @@ export function CurriculumManagement() {
                           <p className="text-sm font-medium text-gray-900">
                             {getTeacherName(curriculum.teacherId)}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-500 text-center sm:text-left">
                             {curriculum.semester} {curriculum.year}
                           </p>
                         </div>
@@ -415,7 +415,7 @@ export function CurriculumManagement() {
                   <p className="text-sm text-gray-900 mb-1">
                     {getTeacherName(curriculum.teacherId)}
                   </p>
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="text-sm text-gray-500 text-center sm:text-left">
                     {curriculum.semester} {curriculum.year}
                   </p>
                   <div className="mt-1">

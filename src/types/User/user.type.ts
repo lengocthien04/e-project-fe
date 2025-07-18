@@ -11,8 +11,8 @@ export interface User {
 }
 
 export interface UserLoginDto {
-  email: string | null;
-  password: string | null;
+  username: string;
+  password: string;
 }
 
 export interface UserModel extends UserCreate, SQLModel {}

@@ -366,10 +366,10 @@ export default function StudentManagement() {
 
                     {/* Student details - responsive layout */}
                     <div className="flex flex-col space-y-1 sm:space-y-0 mt-3 sm:mt-0">
-                      <p className="text-sm text-gray-500 truncate">
+                      <p className="text-sm text-gray-500 truncate text-center sm:text-left">
                         {student.studentId} • {student.department}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 text-center sm:text-left">
                         Year {student.year}
                       </p>
                       <div className="flex items-center justify-between sm:hidden mt-2 pt-2 border-t border-gray-100">

@@ -2,96 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-/* Disable all hover effects */
-* {
-  transition: none !important;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2rem;
-  line-height: 1.1;
-  text-align: left;
-}
-h2 {
-  font-size: 2.4rem;
-  line-height: 1.1;
-  text-align: left;
-}
-p {
-  font-size: 1.2rem;
-  line-height: 1.1;
-  text-align: left;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-  }
-}
+    /* Light theme colors for your academic system */
+    --background: 210 40% 98%; /* #f8fafc - Main background */
+    --foreground: 222.2 84% 40%;
 
-@layer base {
-  * {
-    @apply border-border;
+    --card: 0 0% 100%; /* #ffffff - Card background */
+    --card-foreground: 222.2 84% 40%; /* #0f172a - Card text */
+
+    --popover: 0 0% 100%; /* #ffffff - Popover background */
+    --popover-foreground: 222.2 84% 40%; /* #0f172a - Popover text */
+
+    --primary: 201 96% 32%; /* #0369a1 - Primary blue */
+    --primary-foreground: 210 40% 98%; /* #f8fafc - Primary button text */
+
+    --secondary: 210 40% 96%; /* #f1f5f9 - Secondary background */
+    --secondary-foreground: 215.4 40% 50%; /* #334155 - Secondary text */
+
+    --muted: 210 40% 93%; /* #e4f4fa - Your current background */
+    --muted-foreground: 215.4 40% 46.9%; /* #64748b - Muted text */
+
+    --accent: 210 40% 96%; /* #f1f5f9 - Accent background */
+    --accent-foreground: 215.4 40% 50%; /* #334155 - Accent text */
+
+    --destructive: 0 72.22% 50.59%; /* #ef4444 - Error/delete red */
+    --destructive-foreground: 0 0% 100%; /* #ffffff - Error button text */
+
+    --border: 214.3 31.8% 91.4%; /* #e2e8f0 - Border color */
+    --input: 214.3 31.8% 91.4%; /* #e2e8f0 - Input border */
+    --ring: 201 96% 32%; /* #0369a1 - Focus ring */
+
+    --radius: 0.75rem; /* 12px - Border radius */
+
+    /* Custom variables for your academic system */
+    --success: 142.1 76.2% 36.3%; /* #16a34a - Success green */
+    --success-foreground: 0 0% 100%; /* #ffffff - Success text */
+
+    --warning: 32.1 95% 44.3%; /* #f59e0b - Warning orange */
+    --warning-foreground: 0 0% 100%; /* #ffffff - Warning text */
+
+    --analytics: 262.1 83.3% 57.8%; /* #a855f7 - Analytics purple */
+    --analytics-foreground: 0 0% 100%; /* #ffffff - Analytics text */
+
+    --info: 199 89% 48%; /* #0ea5e9 - Info blue */
+    --info-foreground: 0 0% 100%; /* #ffffff - Info text */
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .dark {
+    /* Dark theme (optional) */
+    --background: 222.2 84% 40%; /* #0f172a */
+    --foreground: 210 40% 98%; /* #f8fafc */
+
+    --card: 222.2 84% 40%; /* #0f172a */
+    --card-foreground: 210 40% 98%; /* #f8fafc */
+
+    --popover: 222.2 84% 40%; /* #0f172a */
+    --popover-foreground: 210 40% 98%; /* #f8fafc */
+
+    --primary: 199 89% 48%; /* #0ea5e9 */
+    --primary-foreground: 222.2 84% 40%; /* #0f172a */
+
+    --secondary: 217.2 32.6% 17.5%; /* #1e293b */
+    --secondary-foreground: 210 40% 98%; /* #f8fafc */
+
+    --muted: 217.2 32.6% 17.5%; /* #1e293b */
+    --muted-foreground: 215 20.2% 65.1%; /* #94a3b8 */
+
+    --accent: 217.2 32.6% 17.5%; /* #1e293b */
+    --accent-foreground: 210 40% 98%; /* #f8fafc */
+
+    --destructive: 0 62.8% 30.6%; /* #991b1b */
+    --destructive-foreground: 210 40% 98%; /* #f8fafc */
+
+    --border: 217.2 32.6% 17.5%; /* #1e293b */
+    --input: 217.2 32.6% 17.5%; /* #1e293b */
+    --ring: 199 89% 48%; /* #0ea5e9 */
   }
 }

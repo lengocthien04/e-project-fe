@@ -52,7 +52,7 @@ export function EducationQualityDashboard() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-12 bg-gray-100 rounded-xl p-1 gap-2 shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-12 bg-blue-100 rounded-xl p-1 gap-2 shadow-sm">
             <TabsTrigger
               value="quality-overview"
               className="flex items-center space-x-2 rounded-lg"

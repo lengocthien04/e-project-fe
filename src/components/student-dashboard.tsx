@@ -11,15 +11,15 @@ import { EducationQualityDashboard } from "./dashboard/education-quality-dashboa
 
 export function StudentDashboard() {
   return (
-    <div className="min-h-screen bg-gray-50 md:p-6 p-4 w-full">
+    <div className="min-h-screen bg-inherit md:p-6 p-4 w-full">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between text-left ">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 text-left">
+            <h1 className="text-3xl font-bold !text-foreground text-left">
               Academic Management System
             </h1>
-            <p className="text-gray-600">
+            <p className="text-secondary-foreground">
               Manage students, teachers, and curriculum
             </p>
           </div>
@@ -28,7 +28,7 @@ export function StudentDashboard() {
         {/* Statistics Cards */}
 
         <Tabs defaultValue="students" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-12 bg-gray-100 rounded-xl p-1 gap-1 sm:gap-0">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto sm:h-12 bg-blue-100 rounded-xl p-1 gap-1 sm:gap-0">
             <TabsTrigger
               value="students"
               className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2 rounded-lg py-3 sm:py-2"

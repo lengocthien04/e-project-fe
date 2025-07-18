@@ -5,6 +5,8 @@ import { PrimeReactProvider } from "primereact/api";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import { AppProvider } from "./contexts/app.context";
 import useRouteElements from "./hooks/useRouteElements";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/query-client";
 
 function AppIner() {
   const routes = useRouteElements();
@@ -24,9 +26,11 @@ function App() {
   return (
     <ScrollToTop>
       <PrimeReactProvider>
-        <AppProvider>
-          <AppIner />
-        </AppProvider>
+        <QueryClientProvider client={queryClient}>
+          <AppProvider>
+            <AppIner />
+          </AppProvider>
+        </QueryClientProvider>
       </PrimeReactProvider>
     </ScrollToTop>
   );

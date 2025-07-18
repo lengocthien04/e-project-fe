@@ -258,7 +258,7 @@ export function TeacherManagement() {
                   {/* Mobile: Name and status */}
                   <div className="flex-1 min-w-0 sm:hidden">
                     <div className="mb-2">
-                      <p className="text-base font-medium text-gray-900 truncate">
+                      <p className="text-base font-medium text-gray-900 truncate text-left sm:text-center">
                         {teacher.firstName} {teacher.lastName}
                       </p>
                     </div>
@@ -293,18 +293,18 @@ export function TeacherManagement() {
 
                   {/* Teacher details */}
                   <div className="flex flex-col space-y-2 sm:space-y-1 mt-3 sm:mt-0">
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-500 truncate text-center sm:text-left">
                       {teacher.employeeId} • {teacher.department} •{" "}
                       {teacher.experience} years exp.
                     </p>
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs text-center sm:text-left text-gray-400 truncate">
                       {teacher.specialization.join(", ")}
                     </p>
 
                     {/* Mobile: Stats and salary */}
                     <div className="sm:hidden pt-2 border-t border-gray-100">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
+                      <div className="flex flex-row items-center justify-between gap-4">
+                        <div className="flex flex-row sm:flex-col gap-2">
                           <p className="text-sm font-medium text-gray-900">
                             {teacher.studentsCount} students
                           </p>

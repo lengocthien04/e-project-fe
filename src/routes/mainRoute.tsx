@@ -8,7 +8,7 @@ import HomePage from "../pages/HomePage";
 
 function MainRouteWrapper() {
   const { isAuthenticated } = useContext(AppContext);
-  return !isAuthenticated ? (
+  return isAuthenticated ? (
     <MainLayout>
       <Suspense fallback={<LoadingWithEmptyContent />}>
         <Outlet />
