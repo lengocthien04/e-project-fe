@@ -25,10 +25,11 @@ import {
   StudentStatus,
   useStudents,
 } from "@/contexts/student-context";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Button } from "../ui/button";
 import { MassEditDialog } from "./mass-edit-dialog";
 import { AddStudentDialog } from "./add-student-dialog";
+import { AppContext } from "@/contexts/app.context";
 
 export default function StudentManagement() {
   const statusColors: Record<StudentStatus, string> = {
@@ -111,6 +112,7 @@ export default function StudentManagement() {
       deleteMultipleStudents(selectedStudents);
     }
   };
+  const { profile } = useContext(AppContext);
   return (
     <>
       <div className="flex items-center justify-between">
@@ -145,6 +147,7 @@ export default function StudentManagement() {
                 size="sm"
                 onClick={handleDeleteSelected}
                 className="whitespace-nowrap"
+                disabled={profile?.role !== "admin"}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete

@@ -6,8 +6,8 @@ export interface UserCreate {
   password: string;
 }
 export interface User {
-  email: string;
   username: string;
+  role: string;
 }
 
 export interface UserLoginDto {
