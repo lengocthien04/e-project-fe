@@ -724,7 +724,7 @@ export function TeacherProfileDialog({
                               </Label>
                               <p className="text-lg font-semibold">
                                 {classItem.currentEnrollment}/
-                                {classItem.maximumEnrollment}
+                                {classItem.maxEnrollment}
                               </p>
                             </div>
                           </div>

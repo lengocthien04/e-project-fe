@@ -128,6 +128,7 @@ export interface Class {
   minimumEnrollment: number;
   maximumEnrollment: number;
   currentEnrollment: number;
+  maxEnrollment: number;
   status: ClassStatus;
   studyRecords: StudyRecord[];
   teachingRecords: TeachingRecord[];

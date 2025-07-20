@@ -6,8 +6,8 @@ import { TeacherManagement } from "@/components/teacher/teacher-management";
 
 import { Users, GraduationCap, BookOpen, UserCheck } from "lucide-react";
 import StudentManagement from "./student/student-management";
-import { EducationQualityDashboard } from "./dashboard/education-quality-dashboard";
 import CurriculumManagement from "./curriculum/curriculum-management";
+import { EducationAnalyticsDashboard } from "./dashboard/education-quality-dashboard";
 
 export function StudentDashboard() {
   return (
@@ -72,7 +72,7 @@ export function StudentDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <EducationQualityDashboard />
+            <EducationAnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>
