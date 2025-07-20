@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,145 +14,181 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  useCurricula,
-  type CurriculumStatus,
-} from "@/contexts/curriculum-context";
-import { useTeachers } from "@/contexts/teacher-context";
-import {
   Search,
   BookOpen,
   Users,
-  Clock,
-  MapPin,
   Plus,
-  Edit,
-  Trash2,
   GraduationCap,
+  Loader2,
+  Eye,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Course, CourseStatus, CourseLevel } from "@/types/course.type";
+import { useDebounce } from "@/hooks/use-debounce";
+import courseApi from "@/apis/coruse.api";
+import { CourseProfileDialog } from "./course-profile-dialog";
 
-const statusColors: Record<CurriculumStatus, string> = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-gray-100 text-gray-800",
-  "under-review": "bg-yellow-100 text-yellow-800",
-  archived: "bg-red-100 text-red-800",
+const statusColors: Record<CourseStatus, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  INACTIVE: "bg-gray-100 text-gray-800",
+  ARCHIVED: "bg-red-100 text-red-800",
 };
 
-const levelColors = {
-  undergraduate: "bg-blue-100 text-blue-800",
-  graduate: "bg-purple-100 text-purple-800",
-  doctoral: "bg-indigo-100 text-indigo-800",
+const levelColors: Record<CourseLevel, string> = {
+  UNDERGRADUATE: "bg-blue-100 text-blue-800",
+  GRADUATE: "bg-purple-100 text-purple-800",
+  DOCTORAL: "bg-indigo-100 text-indigo-800",
 };
 
-export function CurriculumManagement() {
-  const {
-    curricula,
-    selectedCurricula,
-    setSelectedCurricula,
-    deleteCurriculum,
-    deleteMultipleCurricula,
-  } = useCurricula();
-  const { teachers } = useTeachers();
-
+export default function CurriculumManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
+  const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [showCourseProfile, setShowCourseProfile] = useState(false);
 
-  // Get unique departments
-  const departments = Array.from(new Set(curricula.map((c) => c.department)));
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Filter curricula
-  const filteredCurricula = curricula.filter((curriculum) => {
-    const matchesSearch =
-      curriculum.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      curriculum.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      curriculum.description.toLowerCase().includes(searchTerm.toLowerCase());
+  // Search parameters
+  const searchParams = useMemo(
+    () => ({
+      page: currentPage,
+      limit: pageSize,
+      search: debouncedSearchTerm || undefined,
+      department: departmentFilter !== "all" ? departmentFilter : undefined,
+      level: levelFilter !== "all" ? (levelFilter as CourseLevel) : undefined,
+      status:
+        statusFilter !== "all" ? (statusFilter as CourseStatus) : undefined,
+    }),
+    [
+      currentPage,
+      pageSize,
+      debouncedSearchTerm,
+      departmentFilter,
+      levelFilter,
+      statusFilter,
+    ]
+  );
 
-    const matchesDepartment =
-      departmentFilter === "all" || curriculum.department === departmentFilter;
-    const matchesStatus =
-      statusFilter === "all" || curriculum.status === statusFilter;
-    const matchesLevel =
-      levelFilter === "all" || curriculum.level === levelFilter;
-
-    return matchesSearch && matchesDepartment && matchesStatus && matchesLevel;
+  // Fetch courses with search and pagination
+  const {
+    data: coursesResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["courses", searchParams],
+    queryFn: () => courseApi.getAllCourses(searchParams),
   });
 
-  // Statistics
-  const stats = {
-    total: curricula.length,
-    active: curricula.filter((c) => c.status === "active").length,
-    totalEnrollments: curricula.reduce(
-      (sum, c) => sum + c.enrolledStudents.length,
-      0
-    ),
-    avgCapacity: Math.round(
-      curricula.reduce(
-        (sum, c) => sum + (c.enrolledStudents.length / c.maxCapacity) * 100,
-        0
-      ) / curricula.length
-    ),
-  };
+  // Get all courses for statistics (without pagination)
+  const { data: allCoursesResponse } = useQuery({
+    queryKey: ["courses", "all"],
+    queryFn: () => courseApi.getAllCourses({ limit: 100 }),
+  });
+
+  // Get departments
+  const { data: departmentsResponse } = useQuery({
+    queryKey: ["courses", "departments"],
+    queryFn: () => courseApi.getDepartments(),
+  });
+
+  const courses = useMemo(
+    () => coursesResponse?.data || [],
+    [coursesResponse?.data]
+  );
+  const metadata = coursesResponse?.metadata;
+  const allCourses = useMemo(
+    () => allCoursesResponse?.data || [],
+    [allCoursesResponse?.data]
+  );
+  const departments = useMemo(
+    () => departmentsResponse?.data || [],
+    [departmentsResponse?.data]
+  );
+
+  // Calculate statistics from all courses
+  const stats = useMemo(() => {
+    return {
+      total: allCourses.length,
+      active: allCourses.filter((c) => c.status === CourseStatus.ACTIVE).length,
+      undergraduate: allCourses.filter(
+        (c) => c.level === CourseLevel.UNDERGRADUATE
+      ).length,
+      graduate: allCourses.filter((c) => c.level === CourseLevel.GRADUATE)
+        .length,
+      doctoral: allCourses.filter((c) => c.level === CourseLevel.DOCTORAL)
+        .length,
+    };
+  }, [allCourses]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedCurricula(filteredCurricula.map((c) => c.id));
+      setSelectedCourses(courses.map((c) => c.id));
     } else {
-      setSelectedCurricula([]);
+      setSelectedCourses([]);
     }
   };
 
-  const handleSelectCurriculum = (curriculumId: string, checked: boolean) => {
+  const handleSelectCourse = (courseId: number, checked: boolean) => {
     if (checked) {
-      setSelectedCurricula((prev) => [...prev, curriculumId]);
+      setSelectedCourses((prev) => [...prev, courseId]);
     } else {
-      setSelectedCurricula((prev) => prev.filter((id) => id !== curriculumId));
+      setSelectedCourses((prev) => prev.filter((id) => id !== courseId));
     }
   };
 
-  const handleDeleteSelected = () => {
-    if (selectedCurricula.length > 0) {
-      deleteMultipleCurricula(selectedCurricula);
-    }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSelectedCourses([]); // Clear selections when changing pages
   };
 
-  const getTeacherName = (teacherId: string) => {
-    const teacher = teachers.find((t) => t.id === teacherId);
-    return teacher ? `${teacher.firstName} ${teacher.lastName}` : "Unassigned";
+  // Reset page when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
+
+  const handleViewProfile = (course: Course) => {
+    setSelectedCourse(course);
+    setShowCourseProfile(true);
+  };
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-red-600">Error loading courses: {error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Curriculum Management
+          <h2 className="text-xl sm:2xl font-bold text-gray-900 sm:text-left">
+            Course Management
           </h2>
-          <p className="text-gray-600">Manage courses and academic programs</p>
+          <p className="text-gray-600 sm:text-left">
+            Manage courses and academic programs
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button size="sm" className="whitespace-nowrap w-fit">
-            <Plus className="h-4 w-4 mr-0 md:mr-2" />
-            <p className="hidden md:flex text-sm"> Add Course</p>
+            <Plus className="h-4 w-4 mr-0 sm:mr-2" />
+            <p className="hidden sm:flex text-sm">Add Course</p>
           </Button>
-          {selectedCurricula.length > 0 && (
-            <>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Selected ({selectedCurricula.length})
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteSelected}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -168,7 +204,7 @@ export function CurriculumManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Courses</p>
+                <p className="text-sm text-gray-600">Active</p>
                 <p className="text-2xl font-bold text-green-600">
                   {stats.active}
                 </p>
@@ -181,9 +217,22 @@ export function CurriculumManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Enrollments</p>
+                <p className="text-sm text-gray-600">Undergraduate</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {stats.undergraduate}
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Graduate</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {stats.totalEnrollments}
+                  {stats.graduate}
                 </p>
               </div>
               <Users className="h-8 w-8 text-purple-600" />
@@ -194,12 +243,12 @@ export function CurriculumManagement() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg. Capacity</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {stats.avgCapacity}%
+                <p className="text-sm text-gray-600">Doctoral</p>
+                <p className="text-2xl font-bold text-indigo-600">
+                  {stats.doctoral}
                 </p>
               </div>
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Users className="h-8 w-8 text-indigo-600" />
             </div>
           </CardContent>
         </Card>
@@ -207,7 +256,7 @@ export function CurriculumManagement() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4 hover:border-none">
+        <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -215,7 +264,7 @@ export function CurriculumManagement() {
                 <Input
                   placeholder="Search courses..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -242,9 +291,11 @@ export function CurriculumManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="undergraduate">Undergraduate</SelectItem>
-                <SelectItem value="graduate">Graduate</SelectItem>
-                <SelectItem value="doctoral">Doctoral</SelectItem>
+                <SelectItem value={CourseLevel.UNDERGRADUATE}>
+                  Undergraduate
+                </SelectItem>
+                <SelectItem value={CourseLevel.GRADUATE}>Graduate</SelectItem>
+                <SelectItem value={CourseLevel.DOCTORAL}>Doctoral</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -253,26 +304,33 @@ export function CurriculumManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="under-review">Under Review</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value={CourseStatus.ACTIVE}>Active</SelectItem>
+                <SelectItem value={CourseStatus.INACTIVE}>Inactive</SelectItem>
+                <SelectItem value={CourseStatus.ARCHIVED}>Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Curriculum List */}
+      {/* Course List */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Courses ({filteredCurricula.length})</CardTitle>
+            <CardTitle>
+              Courses ({courses.length})
+              {metadata && (
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  Page {metadata.page} of {metadata.totalPages} (
+                  {metadata.total} total)
+                </span>
+              )}
+            </CardTitle>
             <div className="flex items-center space-x-2">
               <Checkbox
                 checked={
-                  selectedCurricula.length === filteredCurricula.length &&
-                  filteredCurricula.length > 0
+                  selectedCourses.length === courses.length &&
+                  courses.length > 0
                 }
                 onCheckedChange={handleSelectAll}
               />
@@ -281,171 +339,209 @@ export function CurriculumManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {filteredCurricula.map((curriculum) => (
-              <div
-                key={curriculum.id}
-                className="flex flex-col md:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
-              >
-                {/* Mobile: Top row with icon, name, and checkbox */}
-                <div className="flex items-center space-x-3 w-full sm:w-auto">
-                  {/* Desktop: Checkbox on left */}
-                  <Checkbox
-                    checked={selectedCurricula.includes(curriculum.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectCurriculum(curriculum.id, checked as boolean)
-                    }
-                    className="hidden sm:block"
-                  />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading courses...</span>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {courses.map((course) => (
+                  <div
+                    key={course.id}
+                    className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    {/* Mobile: Top row with icon, name, and checkbox */}
+                    <div className="flex items-center space-x-3 w-full sm:w-auto">
+                      {/* Desktop: Checkbox on left */}
+                      <Checkbox
+                        checked={selectedCourses.includes(course.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectCourse(course.id, checked as boolean)
+                        }
+                        className="hidden sm:block"
+                      />
 
-                  {/* Icon */}
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="h-6 w-6 text-blue-600" />
-                  </div>
-
-                  {/* Mobile: Name and badges */}
-                  <div className="flex-1 min-w-0 sm:hidden">
-                    <div className="mb-2">
-                      <p className="text-base font-medium text-gray-900 truncate text-left sm:text-center">
-                        {curriculum.name}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className={statusColors[curriculum.status]}>
-                        {curriculum.status.replace("-", " ")}
-                      </Badge>
-                      <Badge className={levelColors[curriculum.level]}>
-                        {curriculum.level}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Mobile: Checkbox in top right */}
-                  <Checkbox
-                    checked={selectedCurricula.includes(curriculum.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectCurriculum(curriculum.id, checked as boolean)
-                    }
-                    className="sm:hidden w-5 h-5 flex-shrink-0"
-                  />
-                </div>
-
-                {/* Desktop: Main content area */}
-                <div className="flex-1 min-w-0 w-full sm:w-auto">
-                  {/* Desktop: Name and badges */}
-                  <div className="hidden sm:flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {curriculum.name}
-                    </p>
-                    <Badge className={statusColors[curriculum.status]}>
-                      {curriculum.status.replace("-", " ")}
-                    </Badge>
-                    <Badge className={levelColors[curriculum.level]}>
-                      {curriculum.level}
-                    </Badge>
-                  </div>
-
-                  {/* Course details */}
-                  <div className="flex flex-col space-y-2 md:space-y-1 mt-3 md:mt-0">
-                    <p className="text-sm text-gray-500 text-center sm:text-left">
-                      {curriculum.code} • {curriculum.department} •{" "}
-                      {curriculum.credits} credits
-                    </p>
-
-                    {/* Schedule and capacity info */}
-                    <div className="flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-4 text-left">
-                      <div className="flex items-center text-xs text-gray-400 text-left">
-                        <Users className="h-3 w-3 mr-1" />
-                        {curriculum.enrolledStudents.length}/
-                        {curriculum.maxCapacity}
+                      {/* Icon */}
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <BookOpen className="h-6 w-6 text-blue-600" />
                       </div>
-                      <div className="flex items-center text-xs text-gray-400">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {curriculum.schedule.days.join(", ")}{" "}
-                        {curriculum.schedule.time}
-                      </div>
-                      <div className="flex items-center text-xs text-gray-400">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {curriculum.schedule.location}
-                      </div>
-                    </div>
 
-                    {/* Mobile: Teacher and semester info */}
-                    <div className="md:hidden pt-2 border-t border-gray-100">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {getTeacherName(curriculum.teacherId)}
+                      {/* Mobile: Name and badges */}
+                      <div className="flex-1 min-w-0 sm:hidden">
+                        <div className="mb-2">
+                          <p className="text-base font-medium text-gray-900 truncate">
+                            {course.courseName}
                           </p>
-                          <p className="text-sm text-gray-500 text-center sm:text-left">
-                            {curriculum.semester} {curriculum.year}
-                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className={statusColors[course.status]}>
+                            {course.status}
+                          </Badge>
+                          <Badge className={levelColors[course.level]}>
+                            {course.level}
+                          </Badge>
                         </div>
                       </div>
 
-                      {/* Mobile: Progress bar */}
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{
-                              width: `${
-                                (curriculum.enrolledStudents.length /
-                                  curriculum.maxCapacity) *
-                                100
-                              }%`,
-                            }}
-                          />
-                        </div>
-                        <p className="text-xs text-gray-400 flex-shrink-0">
-                          {Math.round(
-                            (curriculum.enrolledStudents.length /
-                              curriculum.maxCapacity) *
-                              100
-                          )}
-                          % full
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Desktop: Right side info */}
-                <div className="hidden md:block text-right flex-shrink-0">
-                  <p className="text-sm text-gray-900 mb-1">
-                    {getTeacherName(curriculum.teacherId)}
-                  </p>
-                  <p className="text-sm text-gray-500 text-center sm:text-left">
-                    {curriculum.semester} {curriculum.year}
-                  </p>
-                  <div className="mt-1">
-                    <div className="w-20 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{
-                          width: `${
-                            (curriculum.enrolledStudents.length /
-                              curriculum.maxCapacity) *
-                            100
-                          }%`,
-                        }}
+                      {/* Mobile: Checkbox in top right */}
+                      <Checkbox
+                        checked={selectedCourses.includes(course.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectCourse(course.id, checked as boolean)
+                        }
+                        className="sm:hidden w-5 h-5 flex-shrink-0"
                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {Math.round(
-                        (curriculum.enrolledStudents.length /
-                          curriculum.maxCapacity) *
-                          100
+
+                    {/* Desktop: Main content area */}
+                    <div className="flex-1 min-w-0 w-full sm:w-auto">
+                      {/* Desktop: Name and badges */}
+                      <div className="hidden sm:flex items-center space-x-2 mb-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {course.courseName}
+                        </p>
+                        <Badge className={statusColors[course.status]}>
+                          {course.status}
+                        </Badge>
+                        <Badge className={levelColors[course.level]}>
+                          {course.level}
+                        </Badge>
+                      </div>
+
+                      {/* Course details */}
+                      <div className="flex flex-col space-y-2 sm:space-y-1 mt-3 sm:mt-0">
+                        <p className="text-sm text-gray-500 truncate text-center sm:text-left">
+                          {course.courseCode} • {course.department} •{" "}
+                          {course.credits} credits
+                        </p>
+                        <p className="text-xs text-center sm:text-left text-gray-400 truncate">
+                          Min: {course.minimumEnrollment} • Max:{" "}
+                          {course.maximumEnrollment}
+                        </p>
+
+                        {/* Mobile: Additional info */}
+                        <div className="sm:hidden pt-2 border-t border-gray-100">
+                          <p className="text-sm text-gray-700 truncate mb-2">
+                            {course.description}
+                          </p>
+                          {course.prerequisites && (
+                            <p className="text-xs text-gray-500">
+                              Prerequisites: {course.prerequisites}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop: Right side info */}
+                    <div className="hidden sm:block text-right flex-shrink-0">
+                      <p className="text-sm text-gray-900 mb-1 truncate max-w-40">
+                        {course.description}
+                      </p>
+                      {course.prerequisites && (
+                        <p className="text-xs text-gray-500 truncate max-w-40">
+                          Prerequisites: {course.prerequisites}
+                        </p>
                       )}
-                      % full
-                    </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewProfile(course)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {metadata && metadata.totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handlePageChange(Math.max(1, currentPage - 1))
+                      }
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from(
+                        { length: Math.min(5, metadata.totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (metadata.totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= metadata.totalPages - 2) {
+                            pageNum = metadata.totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={
+                                currentPage === pageNum ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() => handlePageChange(pageNum)}
+                              className="w-8 h-8"
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        }
+                      )}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handlePageChange(
+                          Math.min(metadata.totalPages, currentPage + 1)
+                        )
+                      }
+                      disabled={currentPage === metadata.totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+
+                  <div className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                    {Math.min(currentPage * pageSize, metadata.total)} of{" "}
+                    {metadata.total} results
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
+
+      {/* Course Profile Dialog - You'll need to create this */}
+      {selectedCourse && (
+        <CourseProfileDialog
+          open={showCourseProfile}
+          onOpenChange={setShowCourseProfile}
+          course={selectedCourse}
+        />
+      )}
     </div>
   );
 }

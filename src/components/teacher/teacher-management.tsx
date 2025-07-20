@@ -10,38 +10,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useTeachers, type TeacherStatus } from "@/contexts/teacher-context";
-import {
-  Search,
-  Users,
-  Star,
-  DollarSign,
-  BookOpen,
-  Plus,
-  Edit,
-  Trash2,
-} from "lucide-react";
+import { Search, Users, DollarSign, Plus, Eye, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import teacherApi from "@/apis/teacher.api";
+import { Teacher, TeacherStatus } from "@/types/teacher.type";
+import { TeacherProfileDialog } from "./teacher-profile-dialog";
 
 const statusColors: Record<TeacherStatus, string> = {
-  active: "bg-green-100 text-green-800",
-  "on-leave": "bg-yellow-100 text-yellow-800",
-  retired: "bg-gray-100 text-gray-800",
-  "part-time": "bg-blue-100 text-blue-800",
+  ACTIVE: "bg-green-100 text-green-800",
+  ON_LEAVE: "bg-yellow-100 text-yellow-800",
+  RETIRED: "bg-blue-100 text-blue-800",
+  TERMINATED: "bg-red-100 text-red-800",
 };
 
 export function TeacherManagement() {
-  const {
-    teachers,
-    selectedTeachers,
-    setSelectedTeachers,
-    deleteTeacher,
-    deleteMultipleTeachers,
-  } = useTeachers();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
+  // Fetch teachers
+  const { data: teachersResponse, isLoading } = useQuery({
+    queryKey: ["teachers", { page, limit, search: searchTerm }],
+    queryFn: () =>
+      teacherApi.getAllTeachers({ page, limit, search: searchTerm }),
+  });
+
+  const teachers = teachersResponse?.data || [];
+  const totalTeachers = teachersResponse?.metadata?.total || 0;
 
   // Get unique departments
   const departments = Array.from(new Set(teachers.map((t) => t.department)));
@@ -64,41 +63,32 @@ export function TeacherManagement() {
 
   // Statistics
   const stats = {
-    total: teachers.length,
-    active: teachers.filter((t) => t.status === "active").length,
-    partTime: teachers.filter((t) => t.status === "part-time").length,
-
-    totalStudents: teachers.reduce((sum, t) => sum + t.studentsCount, 0),
+    total: totalTeachers,
+    active: teachers.filter((t) => t.status === TeacherStatus.ACTIVE).length,
+    onLeave: teachers.filter((t) => t.status === TeacherStatus.ON_LEAVE).length,
+    retired: teachers.filter((t) => t.status === TeacherStatus.RETIRED).length,
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedTeachers(filteredTeachers.map((t) => t.id));
-    } else {
-      setSelectedTeachers([]);
-    }
+  const handleViewProfile = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setProfileDialogOpen(true);
   };
 
-  const handleSelectTeacher = (teacherId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedTeachers((prev) => [...prev, teacherId]);
-    } else {
-      setSelectedTeachers((prev) => prev.filter((id) => id !== teacherId));
-    }
-  };
-
-  const handleDeleteSelected = () => {
-    if (selectedTeachers.length > 0) {
-      deleteMultipleTeachers(selectedTeachers);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading teachers...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900 text-center sm:text-left">
             Teacher Management
           </h2>
           <p className="text-gray-600">Manage faculty and teaching staff</p>
@@ -108,23 +98,11 @@ export function TeacherManagement() {
             <Plus className="h-4 w-4 mr-0 sm:mr-2" />
             <p className="hidden sm:flex text-sm"> Add Teacher</p>
           </Button>
-          {selectedTeachers.length > 0 && (
-            <>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Selected ({selectedTeachers.length})
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteSelected}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -149,17 +127,29 @@ export function TeacherManagement() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {stats.totalStudents}
+                <p className="text-sm text-gray-600">On Leave</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {stats.onLeave}
                 </p>
               </div>
-              <BookOpen className="h-8 w-8 text-purple-600" />
+              <Users className="h-8 w-8 text-yellow-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Retired</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {stats.retired}
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -167,7 +157,7 @@ export function TeacherManagement() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="p-4 hover:border:none">
+        <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
@@ -202,10 +192,12 @@ export function TeacherManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="part-time">Part-time</SelectItem>
-                <SelectItem value="on-leave">On Leave</SelectItem>
-                <SelectItem value="retired">Retired</SelectItem>
+                <SelectItem value={TeacherStatus.ACTIVE}>Active</SelectItem>
+                <SelectItem value={TeacherStatus.ON_LEAVE}>On Leave</SelectItem>
+                <SelectItem value={TeacherStatus.RETIRED}>Retired</SelectItem>
+                <SelectItem value={TeacherStatus.TERMINATED}>
+                  Terminated
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -217,16 +209,6 @@ export function TeacherManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Teachers ({filteredTeachers.length})</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={
-                  selectedTeachers.length === filteredTeachers.length &&
-                  filteredTeachers.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm text-gray-600">Select All</span>
-            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -238,16 +220,6 @@ export function TeacherManagement() {
               >
                 {/* Mobile: Top row with avatar, name, and checkbox */}
                 <div className="flex items-center space-x-3 w-full sm:w-auto justify-start">
-                  {/* Desktop: Checkbox on left */}
-                  <Checkbox
-                    checked={selectedTeachers.includes(teacher.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectTeacher(teacher.id, checked as boolean)
-                    }
-                    className="hidden sm:block sm:mr-2"
-                  />
-
-                  {/* Avatar */}
                   <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 !ml-0">
                     <span className="text-sm font-medium">
                       {teacher.firstName[0]}
@@ -264,19 +236,10 @@ export function TeacherManagement() {
                     </div>
                     <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                       <Badge className={statusColors[teacher.status]}>
-                        {teacher.status.replace("-", " ")}
+                        {teacher.status.replace("_", " ")}
                       </Badge>
                     </div>
                   </div>
-
-                  {/* Mobile: Checkbox in top right */}
-                  <Checkbox
-                    checked={selectedTeachers.includes(teacher.id)}
-                    onCheckedChange={(checked) =>
-                      handleSelectTeacher(teacher.id, checked as boolean)
-                    }
-                    className="sm:hidden w-5 h-5 flex-shrink-0"
-                  />
                 </div>
 
                 {/* Desktop: Main content area */}
@@ -287,7 +250,7 @@ export function TeacherManagement() {
                       {teacher.firstName} {teacher.lastName}
                     </p>
                     <Badge className={statusColors[teacher.status]}>
-                      {teacher.status.replace("-", " ")}
+                      {teacher.status.replace("_", " ")}
                     </Badge>
                   </div>
 
@@ -295,10 +258,11 @@ export function TeacherManagement() {
                   <div className="flex flex-col space-y-2 sm:space-y-1 mt-3 sm:mt-0">
                     <p className="text-sm text-gray-500 truncate text-center sm:text-left">
                       {teacher.employeeId} • {teacher.department} •{" "}
-                      {teacher.experience} years exp.
+                      {teacher.academicRank}
                     </p>
                     <p className="text-xs text-center sm:text-left text-gray-400 truncate">
-                      {teacher.specialization.join(", ")}
+                      {teacher.specialization} • {teacher.yearsOfExperience}{" "}
+                      years exp.
                     </p>
 
                     {/* Mobile: Stats and salary */}
@@ -306,17 +270,17 @@ export function TeacherManagement() {
                       <div className="flex flex-row items-center justify-between gap-4">
                         <div className="flex flex-row sm:flex-col gap-2">
                           <p className="text-sm font-medium text-gray-900">
-                            {teacher.studentsCount} students
+                            Rating: {teacher.overallRating || "N/A"}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {teacher.coursesAssigned.length} courses
+                            {teacher.highestEducation}
                           </p>
                         </div>
                         <div className="text-right">
                           <div className="flex items-center justify-end">
                             <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
                             <span className="text-sm font-medium text-gray-900">
-                              ${teacher.salary.toLocaleString()}
+                              ${teacher.salary?.toLocaleString()}
                             </span>
                           </div>
                         </div>
@@ -328,23 +292,43 @@ export function TeacherManagement() {
                 {/* Desktop: Right side info */}
                 <div className="hidden sm:block text-right flex-shrink-0">
                   <p className="text-sm text-gray-900 mb-1">
-                    {teacher.studentsCount} students
+                    Rating: {teacher.overallRating || "N/A"}
                   </p>
                   <p className="text-sm text-gray-500 mb-2">
-                    {teacher.coursesAssigned.length} courses
+                    {teacher.highestEducation}
                   </p>
-                  <div className="flex items-center justify-end">
+                  <div className="flex items-center justify-end mb-2">
                     <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
                     <span className="text-xs text-gray-500">
-                      ${teacher.salary.toLocaleString()}
+                      {teacher.salary?.toLocaleString()}
                     </span>
                   </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewProfile(teacher)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Teacher Profile Dialog */}
+      {selectedTeacher && (
+        <TeacherProfileDialog
+          open={profileDialogOpen}
+          onOpenChange={setProfileDialogOpen}
+          teacher={selectedTeacher}
+        />
+      )}
     </div>
   );
 }

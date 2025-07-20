@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,13 +18,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useStudents, type StudentStatus } from "@/contexts/student-context";
 import { Users } from "lucide-react";
+import { StudentStatus } from "@/types/student.type";
+import { useStudents } from "@/contexts/student-context";
 
 interface MassEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedStudentIds: string[];
+  selectedStudentIds: number[];
 }
 
 export function MassEditDialog({

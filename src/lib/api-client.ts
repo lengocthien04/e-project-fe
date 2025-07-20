@@ -17,7 +17,7 @@ class ApiClient {
   private setupInterceptors() {
     // Add token to requests
     this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("access_token");
       if (token) config.headers.Authorization = `Bearer ${token}`;
       return config;
     });
@@ -37,9 +37,9 @@ class ApiClient {
                   refreshToken,
                 }
               );
-              localStorage.setItem("accessToken", data.accessToken);
+              localStorage.setItem("access_token", data.access_token);
               localStorage.setItem("refreshToken", data.refreshToken);
-              error.config.headers.Authorization = `Bearer ${data.accessToken}`;
+              error.config.headers.Authorization = `Bearer ${data.access_token}`;
               return this.client(error.config);
             }
           } catch {
@@ -69,6 +69,10 @@ class ApiClient {
 
   async delete<T>(url: string, config = {}): Promise<T> {
     const { data } = await this.client.delete(url, config);
+    return data;
+  }
+  async patch<T>(url: string, body = {}, config = {}): Promise<T> {
+    const { data } = await this.client.patch(url, body, config);
     return data;
   }
 }

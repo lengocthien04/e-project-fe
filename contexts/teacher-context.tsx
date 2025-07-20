@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react";
 
-export type TeacherStatus = "active" | "on-leave" | "retired" | "part-time"
+export type TeacherStatus = "active" | "on-leave" | "retired" | "part-time";
 
 export type TeacherSpecialization =
   | "Computer Science"
@@ -10,43 +10,43 @@ export type TeacherSpecialization =
   | "Mathematics"
   | "Physics"
   | "Chemistry"
-  | "Biology"
+  | "Biology";
 
 export type Teacher = {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  employeeId: string
-  department: string
-  specialization: TeacherSpecialization[]
-  status: TeacherStatus
-  dateOfBirth: string
-  hireDate: string
-  salary: number
-  experience: number // years
-  education: string
-  rating: number // 1-5
-  coursesAssigned: string[] // curriculum IDs
-  studentsCount: number
-  officeLocation: string
-  officeHours: string
-  avatar?: string
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  employeeId: string;
+  department: string;
+  specialization: TeacherSpecialization[];
+  status: TeacherStatus;
+  dateOfBirth: string;
+  hireDate: string;
+  salary: number;
+  experience: number; // years
+  education: string;
+  rating: number; // 1-5
+  coursesAssigned: string[]; // curriculum IDs
+  studentsCount: number;
+  officeLocation: string;
+  officeHours: string;
+  avatar?: string;
+};
 
 type TeacherContextType = {
-  teachers: Teacher[]
-  selectedTeachers: string[]
-  setSelectedTeachers: (ids: string[]) => void
-  updateTeacher: (id: string, updates: Partial<Teacher>) => void
-  updateMultipleTeachers: (ids: string[], updates: Partial<Teacher>) => void
-  deleteTeacher: (id: string) => void
-  deleteMultipleTeachers: (ids: string[]) => void
-  addTeacher: (teacher: Omit<Teacher, "id">) => void
-}
+  teachers: Teacher[];
+  selectedTeachers: string[];
+  setSelectedTeachers: (ids: string[]) => void;
+  updateTeacher: (id: string, updates: Partial<Teacher>) => void;
+  updateMultipleTeachers: (ids: string[], updates: Partial<Teacher>) => void;
+  deleteTeacher: (id: string) => void;
+  deleteMultipleTeachers: (ids: string[]) => void;
+  addTeacher: (teacher: Omit<Teacher, "id">) => void;
+};
 
-const TeacherContext = createContext<TeacherContextType | undefined>(undefined)
+const TeacherContext = createContext<TeacherContextType | undefined>(undefined);
 
 // Mock data
 const mockTeachers: Teacher[] = [
@@ -155,37 +155,47 @@ const mockTeachers: Teacher[] = [
     officeLocation: "Math Building, Room 203",
     officeHours: "Mon-Wed-Fri 11-1 PM",
   },
-]
+];
 
 export function TeacherProvider({ children }: { children: ReactNode }) {
-  const [teachers, setTeachers] = useState<Teacher[]>(mockTeachers)
-  const [selectedTeachers, setSelectedTeachers] = useState<string[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>(mockTeachers);
+  const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
 
   const updateTeacher = (id: string, updates: Partial<Teacher>) => {
-    setTeachers((prev) => prev.map((teacher) => (teacher.id === id ? { ...teacher, ...updates } : teacher)))
-  }
+    setTeachers((prev) =>
+      prev.map((teacher) =>
+        teacher.id === id ? { ...teacher, ...updates } : teacher
+      )
+    );
+  };
 
   const updateMultipleTeachers = (ids: string[], updates: Partial<Teacher>) => {
-    setTeachers((prev) => prev.map((teacher) => (ids.includes(teacher.id) ? { ...teacher, ...updates } : teacher)))
-  }
+    setTeachers((prev) =>
+      prev.map((teacher) =>
+        ids.includes(teacher.id) ? { ...teacher, ...updates } : teacher
+      )
+    );
+  };
 
   const deleteTeacher = (id: string) => {
-    setTeachers((prev) => prev.filter((teacher) => teacher.id !== id))
-    setSelectedTeachers((prev) => prev.filter((selectedId) => selectedId !== id))
-  }
+    setTeachers((prev) => prev.filter((teacher) => teacher.id !== id));
+    setSelectedTeachers((prev) =>
+      prev.filter((selectedId) => selectedId !== id)
+    );
+  };
 
   const deleteMultipleTeachers = (ids: string[]) => {
-    setTeachers((prev) => prev.filter((teacher) => !ids.includes(teacher.id)))
-    setSelectedTeachers([])
-  }
+    setTeachers((prev) => prev.filter((teacher) => !ids.includes(teacher.id)));
+    setSelectedTeachers([]);
+  };
 
   const addTeacher = (teacherData: Omit<Teacher, "id">) => {
     const newTeacher: Teacher = {
       ...teacherData,
       id: Date.now().toString(),
-    }
-    setTeachers((prev) => [...prev, newTeacher])
-  }
+    };
+    setTeachers((prev) => [...prev, newTeacher]);
+  };
 
   return (
     <TeacherContext.Provider
@@ -202,13 +212,13 @@ export function TeacherProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </TeacherContext.Provider>
-  )
+  );
 }
 
 export function useTeachers() {
-  const context = useContext(TeacherContext)
+  const context = useContext(TeacherContext);
   if (context === undefined) {
-    throw new Error("useTeachers must be used within a TeacherProvider")
+    throw new Error("useTeachers must be used within a TeacherProvider");
   }
-  return context
+  return context;
 }
