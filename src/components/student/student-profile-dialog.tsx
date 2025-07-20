@@ -95,8 +95,7 @@ export function StudentProfileDialog({
 
   useEffect(() => {
     if (profileData) {
-      const { studyRecords, ...data } = profileData;
-      setEditedStudent(data);
+      setEditedStudent(profileData);
     }
   }, [profileData]);
 
@@ -114,14 +113,13 @@ export function StudentProfileDialog({
 
     updateStudentMutation.mutate({
       id: student.id,
-      updates: data,
+      updates: data as unknown as UpdateStudentDto,
     });
   };
 
   const handleCancel = () => {
     if (profileData) {
-      const { studyRecords, ...data } = profileData;
-      setEditedStudent(data);
+      setEditedStudent(profileData);
     }
     setIsEditing(false);
   };

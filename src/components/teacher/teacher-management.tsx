@@ -29,14 +29,13 @@ export function TeacherManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
   const limit = 50;
 
   // Fetch teachers
   const { data: teachersResponse, isLoading } = useQuery({
-    queryKey: ["teachers", { page, limit, search: searchTerm }],
-    queryFn: () =>
-      teacherApi.getAllTeachers({ page, limit, search: searchTerm }),
+    queryKey: ["teachers", { limit, search: searchTerm }],
+    queryFn: () => teacherApi.getAllTeachers({ limit, search: searchTerm }),
   });
 
   const teachers = teachersResponse?.data || [];

@@ -8,12 +8,6 @@ interface Toast {
   variant?: "default" | "destructive";
 }
 
-interface ToastContextType {
-  toasts: Toast[];
-  toast: (toast: Omit<Toast, "id">) => void;
-  removeToast: (id: string) => void;
-}
-
 let toastCounter = 0;
 
 // Simple in-memory toast store

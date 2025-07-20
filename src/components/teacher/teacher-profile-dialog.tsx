@@ -43,11 +43,10 @@ import {
   Teacher,
   TeacherProfile,
   TeacherStatus,
-  UpdateTeacherDto,
   AcademicRank,
   EducationLevel,
 } from "@/types/teacher.type";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import teacherApi from "@/apis/teacher.api";
 
 interface TeacherProfileDialogProps {
@@ -61,7 +60,6 @@ export function TeacherProfileDialog({
   onOpenChange,
   teacher,
 }: TeacherProfileDialogProps) {
-  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTeacher, setEditedTeacher] = useState<TeacherProfile | null>(
     null
@@ -89,20 +87,6 @@ export function TeacherProfileDialog({
       enabled: open,
     });
 
-  // Update teacher mutation (you'll need to add this to your API)
-  const updateTeacherMutation = useMutation({
-    mutationFn: (data: { id: number; updates: UpdateTeacherDto }) =>
-      // Assuming you'll add this endpoint later
-      Promise.resolve({ data: editedTeacher }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["teachers"] });
-      queryClient.invalidateQueries({
-        queryKey: ["teacher", "profile", teacher.id],
-      });
-      setIsEditing(false);
-    },
-  });
-
   const profileData = profileResponse?.data as TeacherProfile;
   const teachingRecords = teachingRecordsResponse?.data || [];
   const currentClasses = currentClassesResponse?.data || [];
@@ -115,21 +99,6 @@ export function TeacherProfileDialog({
 
   const handleSave = () => {
     if (!editedTeacher) return;
-
-    const {
-      id,
-      createdAt,
-      updatedAt,
-      overallRating,
-      classes,
-      teachingRecords,
-      ...data
-    } = editedTeacher;
-
-    updateTeacherMutation.mutate({
-      id: teacher.id,
-      updates: data,
-    });
   };
 
   const handleCancel = () => {
@@ -190,15 +159,8 @@ export function TeacherProfileDialog({
             <div className="flex space-x-2">
               {isEditing ? (
                 <>
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateTeacherMutation.isPending}
-                  >
-                    {updateTeacherMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-2" />
-                    )}
+                  <Button onClick={handleSave}>
+                    <Save className="h-4 w-4 mr-2" />
                     Save Changes
                   </Button>
                   <Button variant="outline" onClick={handleCancel}>

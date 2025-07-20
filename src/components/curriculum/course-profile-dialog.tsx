@@ -27,11 +27,8 @@ import {
   Save,
   X,
   BookOpen,
-  GraduationCap,
   Loader2,
   Users,
-  Clock,
-  MapPin,
   Building,
   Award,
 } from "lucide-react";
@@ -41,7 +38,6 @@ import {
   CourseStatus,
   CourseLevel,
   UpdateCourseDto,
-  Class,
 } from "@/types/course.type";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import courseApi from "@/apis/coruse.api";
@@ -92,7 +88,7 @@ export function CourseProfileDialog({
 
   useEffect(() => {
     if (profileData) {
-      const { classes, ...data } = profileData;
+      const { ...data } = profileData;
       setEditedCourse(data);
     }
   }, [profileData]);
@@ -110,7 +106,7 @@ export function CourseProfileDialog({
 
   const handleCancel = () => {
     if (profileData) {
-      const { classes, ...data } = profileData;
+      const { ...data } = profileData;
       setEditedCourse(data);
     }
     setIsEditing(false);

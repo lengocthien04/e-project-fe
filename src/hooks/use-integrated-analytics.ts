@@ -81,10 +81,7 @@ export function useIntegratedAnalytics() {
           "SEMESTER" as any
         );
 
-        if (
-          analyticsResponse.data &&
-          analyticsResponse.data.length > 0
-        ) {
+        if (analyticsResponse.data && analyticsResponse.data.length > 0) {
           // Use real analytics data
           processAnalyticsData(
             analyticsResponse.data,
@@ -127,7 +124,7 @@ export function useIntegratedAnalytics() {
   ) => {
     // Transform analytics data to dashboard format
     const transformedDepartments: DepartmentQuality[] = departmentsData
-      .map((dept, index) => {
+      .map((dept) => {
         const deptAnalytics = analyticsData.find((a) => a.department === dept);
         const deptCourses = coursesData.filter((c) => c.department === dept);
         const deptTeachers = teachersData.filter((t) => t.department === dept);
@@ -242,7 +239,7 @@ export function useIntegratedAnalytics() {
   // Calculate overall quality metrics
   const calculateOverallMetrics = (
     departments: DepartmentQuality[],
-    studentsData: Student[],
+    _studentsData: Student[],
     teachersData: Teacher[]
   ): QualityMetrics => {
     if (departments.length === 0) {

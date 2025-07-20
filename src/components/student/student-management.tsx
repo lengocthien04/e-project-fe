@@ -89,15 +89,6 @@ export default function StudentManagement() {
     queryFn: () => studentApi.getAllStudents({ limit: 100 }),
   });
 
-  // Delete student mutation
-  const deleteStudentMutation = useMutation({
-    mutationFn: studentApi.deleteStudent,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] });
-      setSelectedStudents([]);
-    },
-  });
-
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {

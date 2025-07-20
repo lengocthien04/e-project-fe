@@ -2,7 +2,6 @@
 // src/hooks/use-analytics.ts
 import { useState, useEffect } from "react";
 import {
-  Analytics,
   QualityMetrics,
   DepartmentQuality,
   PerformanceTrend,
@@ -13,7 +12,6 @@ import {
 import { analyticsApi } from "@/apis/analytics.api";
 
 export function useAnalytics() {
-  const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics>({
     overall: 0,
     academic: 0,
@@ -278,7 +276,6 @@ export function useAnalytics() {
   }, []);
 
   return {
-    analytics,
     qualityMetrics,
     departmentQuality,
     performanceTrends,

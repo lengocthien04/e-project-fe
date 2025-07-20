@@ -1,9 +1,9 @@
 "use client";
 
+import { Curriculum } from "@/contexts/curriculum-context";
+import { Student, StudentStatus } from "@/types/student.type";
+import { Teacher } from "@/types/teacher.type";
 import { useMemo } from "react";
-import type { Student } from "@/contexts/student-context";
-import type { Teacher } from "@/contexts/teacher-context";
-import type { Curriculum } from "@/contexts/curriculum-context";
 
 const QUALITY_THRESHOLDS = {
   gpa: { excellent: 3.6, good: 3.2, average: 2.8 },
@@ -21,10 +21,12 @@ export function useQualityMetrics(
   // Quality Score Calculation
   const qualityMetrics = useMemo(() => {
     const totalStudents = students.length;
-    const activeStudents = students.filter((s) => s.status === "active").length;
+    const activeStudents = students.filter(
+      (s) => s.status === StudentStatus.ACTIVE
+    ).length;
     const avgGPA =
       totalStudents > 0
-        ? students.reduce((sum, s) => sum + s.gpa, 0) / totalStudents
+        ? students.reduce((sum, s) => sum + s.cumulativeGPA, 0) / totalStudents
         : 0;
 
     // Calculate student-teacher ratio (lower is better)
@@ -77,12 +79,12 @@ export function useQualityMetrics(
 
   // Department Quality Analysis
   const departmentQuality = useMemo(() => {
-    const deptData = {};
+    const deptData: any = {};
 
     students.forEach((student) => {
-      if (!deptData[student.department]) {
-        deptData[student.department] = {
-          department: student.department,
+      if (!deptData[student.major]) {
+        deptData[student.major] = {
+          department: student.major,
           students: [],
           teachers: [],
           courses: [],
@@ -91,12 +93,12 @@ export function useQualityMetrics(
           graduatedCount: 0,
         };
       }
-      deptData[student.department].students.push(student);
-      deptData[student.department].totalGPA += student.gpa;
-      if (student.status === "active")
-        deptData[student.department].activeCount++;
-      if (student.status === "graduated")
-        deptData[student.department].graduatedCount++;
+      deptData[student.major].students.push(student);
+      deptData[student.major].totalGPA += student.cumulativeGPA;
+      if (student.status === StudentStatus.ACTIVE)
+        deptData[student.major].activeCount++;
+      if (student.status === StudentStatus.GRADUATED)
+        deptData[student.major].graduatedCount++;
     });
 
     teachers.forEach((teacher) => {
@@ -245,7 +247,7 @@ export function useQualityMetrics(
   // Performance Trends (simulated data for demonstration)
   const performanceTrends = useMemo(() => {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-    return months.map((month, index) => ({
+    return months.map((month) => ({
       month,
       qualityScore: qualityMetrics.overall + (Math.random() - 0.5) * 10,
       academicPerformance: qualityMetrics.academic + (Math.random() - 0.5) * 8,
