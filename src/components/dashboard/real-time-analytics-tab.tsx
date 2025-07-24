@@ -67,8 +67,8 @@ export function RealTimeAnalyticsTab() {
 
   // Generate mock real-time data
   const generateMockMetrics = (): RealTimeMetrics => ({
-    activeStudents: Math.floor(Math.random() * 100) + 850,
-    onlineTeachers: Math.floor(Math.random() * 20) + 45,
+    activeStudents: 44,
+    onlineTeachers: 13,
     liveClasses: Math.floor(Math.random() * 15) + 25,
     systemLoad: Math.floor(Math.random() * 30) + 40,
     avgResponseTime: Math.floor(Math.random() * 50) + 150,
@@ -87,8 +87,8 @@ export function RealTimeAnalyticsTab() {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        students: Math.floor(Math.random() * 200) + 800,
-        teachers: Math.floor(Math.random() * 30) + 40,
+        students: 44,
+        teachers: 13,
         classes: Math.floor(Math.random() * 20) + 20,
       });
     }
@@ -359,7 +359,7 @@ export function RealTimeAnalyticsTab() {
                 </div>
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-600">Requests/min</p>
-                  <p className="text-lg font-bold text-blue-800">1,247</p>
+                  <p className="text-lg font-bold text-blue-800">5</p>
                 </div>
               </div>
             </div>

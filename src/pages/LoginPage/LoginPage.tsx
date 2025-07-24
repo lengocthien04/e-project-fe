@@ -97,7 +97,10 @@ export default function LoginPage() {
             </h4>
             <div className="text-sm text-blue-800 space-y-1">
               <p>
-                <strong>Viewer:</strong> viewer / viewer
+                <strong>username:</strong> viewer
+              </p>
+              <p>
+                <strong>password:</strong> viewer123
               </p>
             </div>
           </div>
