@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import { useQuery } from "@tanstack/react-query";
 import teacherApi from "@/apis/teacher.api";
 import { Teacher, TeacherStatus } from "@/types/teacher.type";
 import { TeacherProfileDialog } from "./teacher-profile-dialog";
+import { AppContext } from "@/contexts/app.context";
+import { useDebounce } from "@/hooks/use-debounce";
 
 const statusColors: Record<TeacherStatus, string> = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -29,17 +31,28 @@ export function TeacherManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  // const [page, setPage] = useState(1);
-  const limit = 50;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  const limit = 50;
+  const searchParams = useMemo(
+    () => ({
+      page: currentPage,
+      limit: pageSize,
+      search: debouncedSearchTerm || undefined,
+    }),
+    [currentPage, pageSize, debouncedSearchTerm]
+  );
   // Fetch teachers
   const { data: teachersResponse, isLoading } = useQuery({
-    queryKey: ["teachers", { limit, search: searchTerm }],
-    queryFn: () => teacherApi.getAllTeachers({ limit, search: searchTerm }),
+    queryKey: ["teachers", { limit, search: searchParams }],
+    queryFn: () => teacherApi.getAllTeachers(searchParams),
   });
 
   const teachers = teachersResponse?.data || [];
   const totalTeachers = teachersResponse?.metadata?.total || 0;
+  const metadata = teachersResponse?.metadata;
 
   // Get unique departments
   const departments = Array.from(new Set(teachers.map((t) => t.department)));
@@ -73,15 +86,15 @@ export function TeacherManagement() {
     setProfileDialogOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading teachers...</span>
-      </div>
-    );
-  }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+  const { profile } = useContext(AppContext);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -93,7 +106,11 @@ export function TeacherManagement() {
           <p className="text-gray-600">Manage faculty and teaching staff</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" className="whitespace-nowrap w-fit">
+          <Button
+            size="sm"
+            className="whitespace-nowrap w-fit"
+            disabled={profile?.role !== "admin"}
+          >
             <Plus className="h-4 w-4 mr-0 sm:mr-2" />
             <p className="hidden sm:flex text-sm"> Add Teacher</p>
           </Button>
@@ -164,7 +181,7 @@ export function TeacherManagement() {
                 <Input
                   placeholder="Search teachers..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -210,114 +227,188 @@ export function TeacherManagement() {
             <CardTitle>Teachers ({filteredTeachers.length})</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {filteredTeachers.map((teacher) => (
-              <div
-                key={teacher.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
-              >
-                {/* Mobile: Top row with avatar, name, and checkbox */}
-                <div className="flex items-center space-x-3 w-full sm:w-auto justify-start">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 !ml-0">
-                    <span className="text-sm font-medium">
-                      {teacher.firstName[0]}
-                      {teacher.lastName[0]}
-                    </span>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading teachers...</span>
+          </div>
+        ) : (
+          <CardContent>
+            <div className="space-y-2">
+              {filteredTeachers.map((teacher) => (
+                <div
+                  key={teacher.id}
+                  className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50"
+                >
+                  {/* Mobile: Top row with avatar, name, and checkbox */}
+                  <div className="flex items-center space-x-3 w-full sm:w-auto justify-start">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0 !ml-0">
+                      <span className="text-sm font-medium">
+                        {teacher.firstName[0]}
+                        {teacher.lastName[0]}
+                      </span>
+                    </div>
+
+                    {/* Mobile: Name and status */}
+                    <div className="flex-1 min-w-0 sm:hidden">
+                      <div className="mb-2">
+                        <p className="text-base font-medium text-gray-900 truncate text-left sm:text-center">
+                          {teacher.firstName} {teacher.lastName}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                        <Badge className={statusColors[teacher.status]}>
+                          {teacher.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Mobile: Name and status */}
-                  <div className="flex-1 min-w-0 sm:hidden">
-                    <div className="mb-2">
-                      <p className="text-base font-medium text-gray-900 truncate text-left sm:text-center">
+                  {/* Desktop: Main content area */}
+                  <div className="flex-1 min-w-0 w-full sm:w-auto">
+                    {/* Desktop: Name, status, and rating */}
+                    <div className="hidden sm:flex items-center space-x-2 mb-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {teacher.firstName} {teacher.lastName}
                       </p>
-                    </div>
-                    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                       <Badge className={statusColors[teacher.status]}>
                         {teacher.status.replace("_", " ")}
                       </Badge>
                     </div>
-                  </div>
-                </div>
 
-                {/* Desktop: Main content area */}
-                <div className="flex-1 min-w-0 w-full sm:w-auto">
-                  {/* Desktop: Name, status, and rating */}
-                  <div className="hidden sm:flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {teacher.firstName} {teacher.lastName}
-                    </p>
-                    <Badge className={statusColors[teacher.status]}>
-                      {teacher.status.replace("_", " ")}
-                    </Badge>
-                  </div>
+                    {/* Teacher details */}
+                    <div className="flex flex-col space-y-2 sm:space-y-1 mt-3 sm:mt-0">
+                      <p className="text-sm text-gray-500 truncate text-center sm:text-left">
+                        {teacher.employeeId} • {teacher.department} •{" "}
+                        {teacher.academicRank}
+                      </p>
+                      <p className="text-xs text-center sm:text-left text-gray-400 truncate">
+                        {teacher.specialization} • {teacher.yearsOfExperience}{" "}
+                        years exp.
+                      </p>
 
-                  {/* Teacher details */}
-                  <div className="flex flex-col space-y-2 sm:space-y-1 mt-3 sm:mt-0">
-                    <p className="text-sm text-gray-500 truncate text-center sm:text-left">
-                      {teacher.employeeId} • {teacher.department} •{" "}
-                      {teacher.academicRank}
-                    </p>
-                    <p className="text-xs text-center sm:text-left text-gray-400 truncate">
-                      {teacher.specialization} • {teacher.yearsOfExperience}{" "}
-                      years exp.
-                    </p>
-
-                    {/* Mobile: Stats and salary */}
-                    <div className="sm:hidden pt-2 border-t border-gray-100">
-                      <div className="flex flex-row items-center justify-between gap-4">
-                        <div className="flex flex-row sm:flex-col gap-2">
-                          <p className="text-sm font-medium text-gray-900">
-                            Rating: {teacher.overallRating || "N/A"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {teacher.highestEducation}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center justify-end">
-                            <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
-                            <span className="text-sm font-medium text-gray-900">
-                              ${teacher.salary?.toLocaleString()}
-                            </span>
+                      {/* Mobile: Stats and salary */}
+                      <div className="sm:hidden pt-2 border-t border-gray-100">
+                        <div className="flex flex-row items-center justify-between gap-4">
+                          <div className="flex flex-row sm:flex-col gap-2">
+                            <p className="text-sm font-medium text-gray-900">
+                              Rating: {teacher.overallRating || "N/A"}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {teacher.highestEducation}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center justify-end">
+                              <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
+                              <span className="text-sm font-medium text-gray-900">
+                                ${teacher.salary?.toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Desktop: Right side info */}
-                <div className="hidden sm:block text-right flex-shrink-0">
-                  <p className="text-sm text-gray-900 mb-1">
-                    Rating: {teacher.overallRating || "N/A"}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {teacher.highestEducation}
-                  </p>
-                  <div className="flex items-center justify-end mb-2">
-                    <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
-                    <span className="text-xs text-gray-500">
-                      {teacher.salary?.toLocaleString()}
-                    </span>
+                  {/* Desktop: Right side info */}
+                  <div className="hidden sm:block text-right flex-shrink-0">
+                    <p className="text-sm text-gray-900 mb-1">
+                      Rating: {teacher.overallRating || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      {teacher.highestEducation}
+                    </p>
+                    <div className="flex items-center justify-end mb-2">
+                      <DollarSign className="h-3 w-3 text-gray-400 mr-1" />
+                      <span className="text-xs text-gray-500">
+                        {teacher.salary?.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewProfile(teacher)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center space-x-2">
+              ))}
+            </div>
+            {metadata && metadata.totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewProfile(teacher)}
+                    onClick={() =>
+                      handlePageChange(Math.max(1, currentPage - 1))
+                    }
+                    disabled={currentPage === 1}
                   >
-                    <Eye className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from(
+                      { length: Math.min(5, metadata.totalPages) },
+                      (_, i) => {
+                        let pageNum;
+                        if (metadata.totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= metadata.totalPages - 2) {
+                          pageNum = metadata.totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={
+                              currentPage === pageNum ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            className="w-8 h-8"
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handlePageChange(
+                        Math.min(metadata.totalPages, currentPage + 1)
+                      )
+                    }
+                    disabled={currentPage === metadata.totalPages}
+                  >
+                    Next
                   </Button>
                 </div>
+
+                <div className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                  {Math.min(currentPage * pageSize, metadata.total)} of{" "}
+                  {metadata.total} results
+                </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* Teacher Profile Dialog */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import { Course, CourseStatus, CourseLevel } from "@/types/course.type";
 import { useDebounce } from "@/hooks/use-debounce";
 import courseApi from "@/apis/coruse.api";
 import { CourseProfileDialog } from "./course-profile-dialog";
+import { AppContext } from "@/contexts/app.context";
 
 const statusColors: Record<CourseStatus, string> = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -50,7 +51,7 @@ export default function CurriculumManagement() {
   const [selectedCourses, setSelectedCourses] = useState<number[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [showCourseProfile, setShowCourseProfile] = useState(false);
-
+  const { profile } = useContext(AppContext);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Search parameters
@@ -180,7 +181,11 @@ export default function CurriculumManagement() {
           </p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <Button size="sm" className="whitespace-nowrap w-fit">
+          <Button
+            size="sm"
+            className="whitespace-nowrap w-fit"
+            disabled={profile?.role !== "admin"}
+          >
             <Plus className="h-4 w-4 mr-0 sm:mr-2" />
             <p className="hidden sm:flex text-sm">Add Course</p>
           </Button>
@@ -326,16 +331,18 @@ export default function CurriculumManagement() {
                 </span>
               )}
             </CardTitle>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={
-                  selectedCourses.length === courses.length &&
-                  courses.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm text-gray-600">Select All</span>
-            </div>
+            {profile?.role === "admin" && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={
+                    selectedCourses.length === courses.length &&
+                    courses.length > 0
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-gray-600">Select All</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -355,13 +362,15 @@ export default function CurriculumManagement() {
                     {/* Mobile: Top row with icon, name, and checkbox */}
                     <div className="flex items-center space-x-3 w-full sm:w-auto">
                       {/* Desktop: Checkbox on left */}
-                      <Checkbox
-                        checked={selectedCourses.includes(course.id)}
-                        onCheckedChange={(checked) =>
-                          handleSelectCourse(course.id, checked as boolean)
-                        }
-                        className="hidden sm:block"
-                      />
+                      {profile?.role === "admin" && (
+                        <Checkbox
+                          checked={selectedCourses.includes(course.id)}
+                          onCheckedChange={(checked) =>
+                            handleSelectCourse(course.id, checked as boolean)
+                          }
+                          className="hidden sm:block"
+                        />
+                      )}
 
                       {/* Icon */}
                       <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">

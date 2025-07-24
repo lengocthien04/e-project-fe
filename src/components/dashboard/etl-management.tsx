@@ -1,5 +1,5 @@
 // src/components/dashboard/etl-management.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   Card,
   CardContent,
@@ -34,12 +34,13 @@ import {
 import { ETLJobResult, ETLStatus } from "@/types/analytics.type";
 import { toast } from "sonner";
 import { analyticsApi, etlApi } from "@/apis/analytics.api";
+import { AppContext } from "@/contexts/app.context";
 
 export function ETLManagement() {
   const [etlStatus, setETLStatus] = useState<ETLStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastJobResult, setLastJobResult] = useState<ETLJobResult | null>(null);
-
+  const { profile } = useContext(AppContext);
   // Load ETL status
   const loadETLStatus = async () => {
     try {
@@ -269,7 +270,11 @@ export function ETLManagement() {
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="default"
-                    disabled={loading || etlStatus?.isRunning}
+                    disabled={
+                      loading ||
+                      etlStatus?.isRunning ||
+                      profile?.role !== "admin"
+                    }
                     className="w-full"
                   >
                     <Database className="h-4 w-4 mr-2" />
@@ -286,7 +291,10 @@ export function ETLManagement() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={runFullETL}>
+                    <AlertDialogAction
+                      onClick={runFullETL}
+                      disabled={profile?.role !== "admin"}
+                    >
                       Start Full ETL
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -301,7 +309,9 @@ export function ETLManagement() {
               </p>
               <Button
                 variant="outline"
-                disabled={loading || etlStatus?.isRunning}
+                disabled={
+                  loading || etlStatus?.isRunning || profile?.role !== "admin"
+                }
                 onClick={runIncrementalETL}
                 className="w-full"
               >
@@ -320,7 +330,9 @@ export function ETLManagement() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={loading || etlStatus?.isRunning}
+                disabled={
+                  loading || etlStatus?.isRunning || profile?.role !== "admin"
+                }
                 onClick={() => runSpecificETL("student")}
                 className="h-20 flex-col"
               >
@@ -331,7 +343,9 @@ export function ETLManagement() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={loading || etlStatus?.isRunning}
+                disabled={
+                  loading || etlStatus?.isRunning || profile?.role !== "admin"
+                }
                 onClick={() => runSpecificETL("teacher")}
                 className="h-20 flex-col"
               >
@@ -342,7 +356,9 @@ export function ETLManagement() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={loading || etlStatus?.isRunning}
+                disabled={
+                  loading || etlStatus?.isRunning || profile?.role !== "admin"
+                }
                 onClick={() => runSpecificETL("course")}
                 className="h-20 flex-col"
               >
@@ -353,7 +369,9 @@ export function ETLManagement() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={loading || etlStatus?.isRunning}
+                disabled={
+                  loading || etlStatus?.isRunning || profile?.role !== "admin"
+                }
                 onClick={() => runSpecificETL("department")}
                 className="h-20 flex-col"
               >

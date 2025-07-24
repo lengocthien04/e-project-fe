@@ -201,6 +201,7 @@ export default function StudentManagement() {
             onClick={() => setShowAddStudent(true)}
             size="sm"
             className="whitespace-nowrap w-fit"
+            disabled={profile?.role !== "admin"}
           >
             <Plus className="h-4 w-4 mr-0 sm:mr-2" />
             <p className="hidden sm:flex text-sm">Add Student</p>
@@ -371,16 +372,18 @@ export default function StudentManagement() {
                 </span>
               )}
             </CardTitle>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                checked={
-                  selectedStudents.length === filteredStudents.length &&
-                  filteredStudents.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-              />
-              <span className="text-sm text-gray-600">Select All</span>
-            </div>
+            {profile?.role === "admin" && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  checked={
+                    selectedStudents.length === filteredStudents.length &&
+                    filteredStudents.length > 0
+                  }
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-gray-600">Select All</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -430,7 +433,23 @@ export default function StudentManagement() {
                           </div>
                         </div>
 
-                        <div className="flex-shrink-0 sm:hidden">
+                        {profile?.role === "admin" && (
+                          <div className="flex-shrink-0 sm:hidden">
+                            <Checkbox
+                              checked={selectedStudents.includes(student.id)}
+                              onCheckedChange={(checked) =>
+                                handleSelectStudent(
+                                  student.id,
+                                  checked as boolean
+                                )
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-5 h-5"
+                            />
+                          </div>
+                        )}
+
+                        {profile?.role === "admin" && (
                           <Checkbox
                             checked={selectedStudents.includes(student.id)}
                             onCheckedChange={(checked) =>
@@ -440,18 +459,9 @@ export default function StudentManagement() {
                               )
                             }
                             onClick={(e) => e.stopPropagation()}
-                            className="w-5 h-5"
+                            className="hidden sm:block"
                           />
-                        </div>
-
-                        <Checkbox
-                          checked={selectedStudents.includes(student.id)}
-                          onCheckedChange={(checked) =>
-                            handleSelectStudent(student.id, checked as boolean)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className="hidden sm:block"
-                        />
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -570,7 +580,6 @@ export default function StudentManagement() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
       {selectedStudent && (
         <StudentProfileDialog
           open={showStudentProfile}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import studentApi from "@/apis/student.api";
 import { cn } from "@/lib/utils";
+import { AppContext } from "@/contexts/app.context";
 
 interface StudentProfileDialogProps {
   open: boolean;
@@ -130,6 +131,7 @@ export function StudentProfileDialog({
     SUSPENDED: "bg-red-100 text-red-800",
     WITHDRAWN: "bg-yellow-100 text-yellow-800",
   };
+  const { profile } = useContext(AppContext);
 
   // Show loading if profile is still loading
   if (profileLoading || !profileData) {
@@ -181,10 +183,12 @@ export function StudentProfileDialog({
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
+                profile?.role === "admin" && (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                )
               )}
             </div>
           </div>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,7 @@ import {
 } from "@/types/teacher.type";
 import { useQuery } from "@tanstack/react-query";
 import teacherApi from "@/apis/teacher.api";
+import { AppContext } from "@/contexts/app.context";
 
 interface TeacherProfileDialogProps {
   open: boolean;
@@ -114,6 +115,7 @@ export function TeacherProfileDialog({
     RETIRED: "bg-blue-100 text-blue-800",
     TERMINATED: "bg-red-100 text-red-800",
   };
+  const { profile } = useContext(AppContext);
 
   // Show loading if profile is still loading
   if (profileLoading || !profileData) {
@@ -128,7 +130,6 @@ export function TeacherProfileDialog({
       </Dialog>
     );
   }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -169,10 +170,12 @@ export function TeacherProfileDialog({
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => setIsEditing(true)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Profile
-                </Button>
+                profile?.role === "admin" && (
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                )
               )}
             </div>
           </div>
